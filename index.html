@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioControl Pro - Registro Cardiovascular Integral</title>
+
+<!-- Library jsPDF para exportar informe clínico -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root {
+  --bg-color: #0b0f17;
+  --card-bg: #131b2a;
+  --card-border: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  
+  --azul-cardio: #38bdf8;
+  --verde-optimo: #4ade80;
+  --amarillo-elevado: #facc15;
+  --naranja-hta1: #fb923c;
+  --rojo-hta2: #f87171;
+  --rojo-crisis: #ef4444;
+  
+  --violeta-farma: #c084fc;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  padding-bottom: 80px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+.content {
+  width: 100%;
+  max-width: 600px;
+  padding: 20px 16px;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.brand-badge {
+  display: inline-block;
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--azul-cardio);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.seccion-app {
+  display: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.seccion-app.activa {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.card h3 {
+  font-size: 1.05rem;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+input[type="text"], input[type="number"], input[type="date"], input[type="time"], select, textarea {
+  width: 100%;
+  background-color: #0b0f17;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 10px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--azul-cardio);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.selector-momento {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btn-momento {
+  flex: 1;
+  background: #0b0f17;
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 600;
+}
+
+.btn-momento.activo {
+  border-color: var(--azul-cardio);
+  color: var(--azul-cardio);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+button.btn-principal {
+  width: 100%;
+  background-color: var(--azul-cardio);
+  color: #0b0f17;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button.btn-principal:hover {
+  filter: brightness(1.1);
+}
+
+.badge-clasificacion {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-top: 6px;
+}
+
+.item-registro {
+  background: #0b0f17;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 4px;
+}
+
+.btn-borrar {
+  background-color: var(--rojo-hta2);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 65px;
+  background-color: var(--bg-color);
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+  z-index: 1000;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.72rem;
+  cursor: pointer;
+  gap: 3px;
+  flex: 1;
+  font-weight: 500;
+}
+
+.nav-btn span:first-child {
+  font-size: 1.2rem;
+}
+
+.nav-btn.active {
+  color: var(--azul-cardio);
+  font-weight: 700;
+}
+
+.kpi-card {
+  background: #0b0f17;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid var(--card-border);
+}
+
+.kpi-val {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--azul-cardio);
+}
+
+.kpi-lbl {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<main class="content">
+
+  <header class="app-header">
+    <div class="brand-badge">MONITOREO CARDIOVASCULAR</div>
+    <h1>CardioControl Pro</h1>
+  </header>
+
+  <!-- 1. NUEVA MEDICIÓN -->
+  <section id="medicion" class="seccion-app activa">
+    <div class="card">
+      <h3 style="color: var(--azul-cardio);">🩺 Nueva Medición de T.A.</h3>
+      
+      <div class="grid-3" style="margin-bottom:12px;">
+        <div class="form-group">
+          <label>Sistólica (Máx)</label>
+          <input type="number" id="inputSis" placeholder="120">
+        </div>
+        <div class="form-group">
+          <label>Diastólica (Mín)</label>
+          <input type="number" id="inputDia" placeholder="80">
+        </div>
+        <div class="form-group">
+          <label>Pulso (bpm)</label>
+          <input type="number" id="inputPulso" placeholder="70">
+        </div>
+      </div>
+
+      <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight:600; display:block; margin-bottom:6px;">Momento del día</label>
+      <div class="selector-momento">
+        <div class="btn-momento activo" onclick="seleccionarMomento('Mañana', this)">☀️ Mañana</div>
+        <div class="btn-momento" onclick="seleccionarMomento('Tarde', this)">🌤️ Tarde</div>
+        <div class="btn-momento" onclick="seleccionarMomento('Noche', this)">🌙 Noche</div>
+      </div>
+
+      <div class="form-group">
+        <label>Notas o Síntomas (Opcional)</label>
+        <input type="text" id="inputNotas" placeholder="Ej: En reposo, antes de tomar medicación">
+      </div>
+
+      <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+        <input type="checkbox" id="chkMedTomada" style="width:auto;">
+        <label for="chkMedTomada" style="margin:0; font-weight:normal;">Tomé mi medicación habitual antes de medir</label>
+      </div>
+
+      <button class="btn-principal" onclick="guardarMedicion()">💾 Guardar Medición</button>
+    </div>
+
+    <!-- Feedback instantáneo -->
+    <div id="boxClasificacion" class="card" style="display:none;">
+      <h3>Clasificación Clínica:</h3>
+      <div id="txtClasificacion" class="badge-clasificacion"></div>
+      <p id="descClasificacion" style="font-size:0.83rem; margin-top:8px; color:var(--text-secondary);"></p>
+    </div>
+  </section>
+
+  <!-- 2. HISTORIAL Y TENDENCIAS -->
+  <section id="historial" class="seccion-app">
+    <div class="card">
+      <h3 style="color: var(--azul-cardio);">📊 Promedios y Tendencias</h3>
+      <div class="grid-3">
+        <div class="kpi-card">
+          <div id="kpiSis" class="kpi-val">--</div>
+          <div class="kpi-lbl">Prom. Sistólica</div>
+        </div>
+        <div class="kpi-card">
+          <div id="kpiDia" class="kpi-val">--</div>
+          <div class="kpi-lbl">Prom. Diastólica</div>
+        </div>
+        <div class="kpi-card">
+          <div id="kpiPulso" class="kpi-val">--</div>
+          <div class="kpi-lbl">Prom. Pulso</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="color: var(--azul-cardio);">📋 Registros Recientes</h3>
+      <div id="listaMediciones"></div>
+    </div>
+  </section>
+
+  <!-- 3. MEDICACIÓN CARDIOVASCULAR -->
+  <section id="medicacion" class="seccion-app">
+    <div class="card">
+      <h3 style="color: var(--violeta-farma);">💊 Esquema de Medicación</h3>
+      
+      <div class="form-group">
+        <label>Nombre del Fármaco</label>
+        <input type="text" id="inputFarmaco" placeholder="Ej: Losartán, Amlodipina">
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Dosis</label>
+          <input type="text" id="inputDosis" placeholder="Ej: 50 mg">
+        </div>
+        <div class="form-group">
+          <label>Horario habitual</label>
+          <input type="time" id="inputHoraMed">
+        </div>
+      </div>
+
+      <button class="btn-principal" style="background-color: var(--violeta-farma); color:#0b0f17;" onclick="guardarMedicacion()">➕ Agregar Medicamento</button>
+    </div>
+
+    <div class="card">
+      <h3 style="color: var(--violeta-farma);">📋 Mi Tratamiento Actual</h3>
+      <div id="listaMedicamentos"></div>
+    </div>
+  </section>
+
+  <!-- 4. REPORTE MÉDICO EN PDF -->
+  <section id="reporte" class="seccion-app">
+    <div class="card" style="border:1px solid var(--azul-cardio);">
+      <h3 style="color: var(--azul-cardio);">📄 Exportar Informe para el Cardiólogo</h3>
+      <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:12px;">
+        Genera un informe completo en PDF con tus promedios, gráfico/tabla de mediciones y adherencia al tratamiento.
+      </p>
+
+      <div class="form-group">
+        <label>Nombre y Apellido del Paciente</label>
+        <input type="text" id="inputPdfNombre" placeholder="Ej: Juan Pérez">
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Edad</label>
+          <input type="number" id="inputPdfEdad" placeholder="Ej: 58">
+        </div>
+        <div class="form-group">
+          <label>Médico Tratante</label>
+          <input type="text" id="inputPdfMedico" placeholder="Ej: Dr. González">
+        </div>
+      </div>
+
+      <button class="btn-principal" onclick="exportarPdfCardio()">📄 Generar Reporte PDF Gratuito</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- NAVEGACIÓN INFERIOR -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="cambiarPestana('medicion', this)">
+    <span>🩺</span>
+    <span>Medir</span>
+  </button>
+  <button class="nav-btn" onclick="cambiarPestana('historial', this)">
+    <span>📊</span>
+    <span>Historial</span>
+  </button>
+  <button class="nav-btn" onclick="cambiarPestana('medicacion', this)">
+    <span>💊</span>
+    <span>Medicación</span>
+  </button>
+  <button class="nav-btn" onclick="cambiarPestana('reporte', this)">
+    <span>📄</span>
+    <span>Reporte</span>
+  </button>
+</nav>
+
+<script>
+let momentoSeleccionado = 'Mañana';
+
+function seleccionarMomento(m, el) {
+  momentoSeleccionado = m;
+  document.querySelectorAll('.btn-momento').forEach(b => b.classList.remove('activo'));
+  el.classList.add('activo');
+}
+
+function cambiarPestana(idPestana, elementoBoton) {
+  document.querySelectorAll('.seccion-app').forEach(sec => sec.classList.remove('activa'));
+  document.getElementById(idPestana).classList.add('activa');
+
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  elementoBoton.classList.add('active');
+
+  if (idPestana === 'historial') cargarHistorialUI();
+  if (idPestana === 'medicacion') cargarMedicacionUI();
+}
+
+/* --- CLASIFICACIÓN CLÍNICA DE T.A. --- */
+function clasificarTA(sis, dia) {
+  if (sis >= 180 || dia >= 120) {
+    return { label: "CRISIS HIPERTENSIVA", color: "var(--rojo-crisis)", bg: "rgba(239, 68, 68, 0.2)", desc: "Atención: Valores críticamente elevados. Si presenta dolor de pecho o falta de aire, consulte en guardia." };
+  }
+  if (sis >= 140 || dia >= 90) {
+    return { label: "HIPERTENSIÓN GRADO 2", color: "var(--rojo-hta2)", bg: "rgba(248, 113, 113, 0.2)", desc: "Presión arterial alta. Requiere seguimiento médico regular." };
+  }
+  if ((sis >= 130 && sis <= 139) || (dia >= 80 && dia <= 89)) {
+    return { label: "HIPERTENSIÓN GRADO 1", color: "var(--naranja-hta1)", bg: "rgba(251, 146, 60, 0.2)", desc: "Presión moderadamente elevada. Conviene revisar hábitos y consultar al profesional." };
+  }
+  if ((sis >= 120 && sis <= 129) && dia < 80) {
+    return { label: "PRESIÓN ELEVADA", color: "var(--amarillo-elevado)", bg: "rgba(250, 204, 21, 0.2)", desc: "Ligeramente por encima del valor ideal." };
+  }
+  if (sis < 120 && dia < 80) {
+    return { label: "PRESIÓN OPTIMA", color: "var(--verde-optimo)", bg: "rgba(74, 222, 128, 0.2)", desc: "Valores dentro del rango saludable." };
+  }
+  return { label: "REGISTRO NORMAL", color: "var(--azul-cardio)", bg: "rgba(56, 189, 248, 0.2)", desc: "Valores aceptables." };
+}
+
+/* --- GUARDAR MEDICIÓN --- */
+function guardarMedicion() {
+  const sis = parseInt(document.getElementById('inputSis').value);
+  const dia = parseInt(document.getElementById('inputDia').value);
+  const pulso = parseInt(document.getElementById('inputPulso').value);
+  const notas = document.getElementById('inputNotas').value;
+  const medTomada = document.getElementById('chkMedTomada').checked;
+
+  if (!sis || !dia) {
+    alert("Por favor ingresá al menos la presión Sistólica y Diastólica.");
+    return;
+  }
+
+  const clasif = clasificarTA(sis, dia);
+
+  const registro = {
+    id: Date.now(),
+    fechaStr: new Date().toLocaleDateString(),
+    horaStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    sis,
+    dia,
+    pulso: pulso || '--',
+    momento: momentoSeleccionado,
+    notas,
+    medTomada,
+    clasif
+  };
+
+  let list = JSON.parse(localStorage.getItem('cc_mediciones') || '[]');
+  list.unshift(registro);
+  localStorage.setItem('cc_mediciones', JSON.stringify(list));
+
+  // Mostrar Feedback
+  const box = document.getElementById('boxClasificacion');
+  const txt = document.getElementById('txtClasificacion');
+  const desc = document.getElementById('descClasificacion');
+
+  txt.innerText = clasif.label;
+  txt.style.color = clasif.color;
+  txt.style.backgroundColor = clasif.bg;
+  desc.innerText = clasif.desc;
+  box.style.display = 'block';
+
+  // Limpiar campos
+  document.getElementById('inputSis').value = '';
+  document.getElementById('inputDia').value = '';
+  document.getElementById('inputPulso').value = '';
+  document.getElementById('inputNotas').value = '';
+  document.getElementById('chkMedTomada').checked = false;
+}
+
+/* --- CARGAR HISTORIAL Y KPIS --- */
+function cargarHistorialUI() {
+  const cont = document.getElementById('listaMediciones');
+  const list = JSON.parse(localStorage.getItem('cc_mediciones') || '[]');
+
+  if (list.length === 0) {
+    cont.innerHTML = `<p style="font-size:0.83rem; color: var(--text-muted); text-align:center;">No hay mediciones registradas.</p>`;
+    document.getElementById('kpiSis').innerText = '--';
+    document.getElementById('kpiDia').innerText = '--';
+    document.getElementById('kpiPulso').innerText = '--';
+    return;
+  }
+
+  // Calcular KPI Promedios
+  const sumSis = list.reduce((a, b) => a + b.sis, 0);
+  const sumDia = list.reduce((a, b) => a + b.dia, 0);
+  const pulsosValidos = list.filter(i => typeof i.pulso === 'number');
+  const sumPulso = pulsosValidos.reduce((a, b) => a + b.pulso, 0);
+
+  document.getElementById('kpiSis').innerText = Math.round(sumSis / list.length);
+  document.getElementById('kpiDia').innerText = Math.round(sumDia / list.length);
+  document.getElementById('kpiPulso').innerText = pulsosValidos.length ? Math.round(sumPulso / pulsosValidos.length) : '--';
+
+  cont.innerHTML = list.map(m => `
+    <div class="item-registro">
+      <div class="item-header">
+        <strong style="color:var(--azul-cardio);">${m.fechaStr} - ${m.horaStr} (${m.momento})</strong>
+        <button onclick="borrarElemento('cc_mediciones', ${m.id}, cargarHistorialUI)" class="btn-borrar">🗑️</button>
+      </div>
+      <div style="font-size:1.05rem; font-weight:bold; margin-bottom:4px;">
+        🩺 ${m.sis}/${m.dia} mmHg | ❤️ ${m.pulso} bpm
+      </div>
+      <div style="margin-bottom:4px;">
+        <span class="badge-clasificacion" style="color:${m.clasif.color}; background:${m.clasif.bg}; padding:2px 6px; font-size:0.75rem;">${m.clasif.label}</span>
+      </div>
+      ${m.notas ? `<div style="color:var(--text-secondary); font-size:0.8rem;">📝 ${m.notas}</div>` : ''}
+      <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+        ${m.medTomada ? '✅ Medicación tomada' : '❌ Sin registro de medicación previa'}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* --- MEDICACIÓN --- */
+function guardarMedicacion() {
+  const farmaco = document.getElementById('inputFarmaco').value;
+  const dosis = document.getElementById('inputDosis').value;
+  const hora = document.getElementById('inputHoraMed').value;
+
+  if (!farmaco) {
+    alert("Ingresá el nombre del medicamento.");
+    return;
+  }
+
+  const registro = {
+    id: Date.now(),
+    farmaco,
+    dosis: dosis || 'Dosis no especificada',
+    hora: hora || 'Horario flexible'
+  };
+
+  let list = JSON.parse(localStorage.getItem('cc_medicamentos') || '[]');
+  list.unshift(registro);
+  localStorage.setItem('cc_medicamentos', JSON.stringify(list));
+
+  document.getElementById('inputFarmaco').value = '';
+  document.getElementById('inputDosis').value = '';
+  document.getElementById('inputHoraMed').value = '';
+
+  cargarMedicacionUI();
+}
+
+function cargarMedicacionUI() {
+  const cont = document.getElementById('listaMedicamentos');
+  const list = JSON.parse(localStorage.getItem('cc_medicamentos') || '[]');
+
+  if (list.length === 0) {
+    cont.innerHTML = `<p style="font-size:0.83rem; color: var(--text-muted); text-align:center;">No hay medicamentos agregados.</p>`;
+    return;
+  }
+
+  cont.innerHTML = list.map(m => `
+    <div class="item-registro">
+      <div class="item-header">
+        <strong style="color:var(--violeta-farma); font-size:0.95rem;">💊 ${m.farmaco}</strong>
+        <button onclick="borrarElemento('cc_medicamentos', ${m.id}, cargarMedicacionUI)" class="btn-borrar">🗑️</button>
+      </div>
+      <div>📐 <strong>Dosis:</strong> ${m.dosis}</div>
+      <div>⏰ <strong>Horario:</strong> ${m.hora} hs</div>
+    </div>
+  `).join('');
+}
+
+function borrarElemento(key, id, callback) {
+  let list = JSON.parse(localStorage.getItem(key) || '[]');
+  list = list.filter(i => i.id !== id);
+  localStorage.setItem(key, JSON.stringify(list));
+  callback();
+}
+
+/* --- EXPORTAR REPORTES EN PDF --- */
+function exportarPdfCardio() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 18;
+
+  const nombre = document.getElementById('inputPdfNombre').value.trim() || 'Paciente No Especificado';
+  const edad = document.getElementById('inputPdfEdad').value.trim();
+  const medico = document.getElementById('inputPdfMedico').value.trim();
+
+  const mediciones = JSON.parse(localStorage.getItem('cc_mediciones') || '[]');
+  const medicamentos = JSON.parse(localStorage.getItem('cc_medicamentos') || '[]');
+
+  // Encabezado
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("INFORME DE MONITOREO CARDIOVASCULAR", 14, y);
+  y += 6;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text("CardioControl Pro - Monitoreo Ambulatorio de Presión Arterial", 14, y);
+  y += 6;
+
+  // Datos
+  doc.setFont("helvetica", "bold");
+  doc.text(`Paciente: ${nombre}${edad ? ` | Edad: ${edad} años` : ''}${medico ? ` | Prof. Tratante: ${medico}` : ''}`, 14, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 14, y);
+  y += 6;
+  doc.line(14, y, 196, y);
+  y += 8;
+
+  // Promedios
+  if (mediciones.length > 0) {
+    const sumSis = mediciones.reduce((a, b) => a + b.sis, 0);
+    const sumDia = mediciones.reduce((a, b) => a + b.dia, 0);
+    const promSis = Math.round(sumSis / mediciones.length);
+    const promDia = Math.round(sumDia / mediciones.length);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("1. Resumen Estadístico de Presión Arterial:", 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`   • Promedio General: ${promSis}/${promDia} mmHg (Total de mediciones: ${mediciones.length})`, 14, y);
+    y += 8;
+  }
+
+  // Medicación
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("2. Esquema Farmacológico Actual:", 14, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+
+  if (medicamentos.length === 0) {
+    doc.text("   • Sin fármacos declarados.", 14, y);
+    y += 6;
+  } else {
+    medicamentos.forEach(m => {
+      doc.text(`   • ${m.farmaco} - Dosis: ${m.dosis} - Hora: ${m.hora} hs`, 14, y);
+      y += 5;
+    });
+  }
+  y += 4;
+
+  // Detalle Registros
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("3. Registro Ambulatorio de Mediciones:", 14, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+
+  if (mediciones.length === 0) {
+    doc.text("   • Sin mediciones registradas.", 14, y);
+  } else {
+    mediciones.forEach(m => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.text(`   • ${m.fechaStr} ${m.horaStr} (${m.momento}) -> ${m.sis}/${m.dia} mmHg | Pulso: ${m.pulso} bpm | [${m.clasif.label}]`, 14, y);
+      y += 5;
+    });
+  }
+
+  doc.save(`Informe_Cardio_${nombre.replace(/\s+/g, '_')}.pdf`);
+}
+
+// Cargar UI inicial
+cargarHistorialUI();
+</script>
+</body>
+</html>

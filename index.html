@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CardioControl Pro - Registro Cardiovascular Integral</title>
+<title>Cardio Control - Monitoreo Cardiovascular</title>
 
 <!-- Library jsPDF para exportar informe clínico -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -25,6 +25,7 @@
   --rojo-crisis: #ef4444;
   
   --violeta-farma: #c084fc;
+  --turquesa-estudios: #2dd4bf;
 }
 
 * {
@@ -63,15 +64,23 @@ body {
   padding: 4px 12px;
   border-radius: 20px;
   border: 1px solid rgba(56, 189, 248, 0.3);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: 1px;
 }
 
 .app-header h1 {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.5px;
+}
+
+.app-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 400;
+  line-height: 1.3;
 }
 
 .seccion-app {
@@ -117,7 +126,7 @@ body {
   font-weight: 600;
 }
 
-input[type="text"], input[type="number"], input[type="date"], input[type="time"], select, textarea {
+input[type="text"], input[type="number"], input[type="date"], input[type="time"], select, textarea, input[type="file"] {
   width: 100%;
   background-color: #0b0f17;
   border: 1px solid var(--card-border);
@@ -246,7 +255,7 @@ button.btn-principal:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   cursor: pointer;
   gap: 3px;
   flex: 1;
@@ -254,7 +263,7 @@ button.btn-principal:hover {
 }
 
 .nav-btn span:first-child {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .nav-btn.active {
@@ -280,6 +289,12 @@ button.btn-principal:hover {
   font-size: 0.7rem;
   color: var(--text-muted);
 }
+
+.adjunto-preview {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--turquesa-estudios);
+}
 </style>
 </head>
 <body>
@@ -288,7 +303,8 @@ button.btn-principal:hover {
 
   <header class="app-header">
     <div class="brand-badge">MONITOREO CARDIOVASCULAR</div>
-    <h1>CardioControl Pro</h1>
+    <h1>Cardio Control</h1>
+    <p class="app-subtitle">Mini App para el cuidado del corazón y la Presión Arterial</p>
   </header>
 
   <!-- 1. NUEVA MEDICIÓN -->
@@ -395,12 +411,61 @@ button.btn-principal:hover {
     </div>
   </section>
 
-  <!-- 4. REPORTE MÉDICO EN PDF -->
+  <!-- 4. ESTUDIOS CARDIOLÓGICOS (NUEVO) -->
+  <section id="estudios" class="seccion-app">
+    <div class="card">
+      <h3 style="color: var(--turquesa-estudios);">🫀 Módulo de Estudios Cardiológicos</h3>
+      
+      <div class="form-group">
+        <label>Tipo / Título del Estudio</label>
+        <select id="selectTipoEstudio">
+          <option value="Electrocardiograma (ECG)">Electrocardiograma (ECG)</option>
+          <option value="Holter de Presión (MAPA)">Holter de Presión (MAPA)</option>
+          <option value="Holter del Ritmo (ECG 24hs)">Holter del Ritmo (ECG 24hs)</option>
+          <option value="Ecocardiograma Doppler">Ecocardiograma Doppler</option>
+          <option value="Ergometría (Prueba de Esfuerzo)">Ergometría (Prueba de Esfuerzo)</option>
+          <option value="Cámara Gamma Cardio">Cámara Gamma / Perfusión</option>
+          <option value="Análisis de Laboratorio Cardio">Análisis de Laboratorio</option>
+          <option value="Otro Estudio">Otro Estudio</option>
+        </select>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Fecha de Realización</label>
+          <input type="date" id="inputFechaEstudio">
+        </div>
+        <div class="form-group">
+          <label>Hora (Opcional)</label>
+          <input type="time" id="inputHoraEstudio">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Adjuntar Estudio (PDF o Imagen)</label>
+        <input type="file" id="inputFileEstudio" accept="image/*,application/pdf">
+      </div>
+
+      <div class="form-group">
+        <label>Informe / Observaciones del Profesional</label>
+        <input type="text" id="inputObsEstudio" placeholder="Ej: Sin alteraciones significativas, FEVI conservada">
+      </div>
+
+      <button class="btn-principal" style="background-color: var(--turquesa-estudios); color:#0b0f17;" onclick="guardarEstudio()">📎 Adjuntar Estudio</button>
+    </div>
+
+    <div class="card">
+      <h3 style="color: var(--turquesa-estudios);">📑 mis Estudios Cargados</h3>
+      <div id="listaEstudios"></div>
+    </div>
+  </section>
+
+  <!-- 5. REPORTE MÉDICO EN PDF -->
   <section id="reporte" class="seccion-app">
     <div class="card" style="border:1px solid var(--azul-cardio);">
       <h3 style="color: var(--azul-cardio);">📄 Exportar Informe para el Cardiólogo</h3>
       <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:12px;">
-        Genera un informe completo en PDF con tus promedios, gráfico/tabla de mediciones y adherencia al tratamiento.
+        Genera un informe completo en PDF con tus promedios, historial tensional, medicación y resumen de estudios.
       </p>
 
       <div class="form-group">
@@ -419,7 +484,7 @@ button.btn-principal:hover {
         </div>
       </div>
 
-      <button class="btn-principal" onclick="exportarPdfCardio()">📄 Generar Reporte PDF Gratuito</button>
+      <button class="btn-principal" onclick="exportarPdfCardio()">📄 Generar Reporte PDF</button>
     </div>
   </section>
 
@@ -437,11 +502,15 @@ button.btn-principal:hover {
   </button>
   <button class="nav-btn" onclick="cambiarPestana('medicacion', this)">
     <span>💊</span>
-    <span>Medicación</span>
+    <span>Fármacos</span>
+  </button>
+  <button class="nav-btn" onclick="cambiarPestana('estudios', this)">
+    <span>🫀</span>
+    <span>Estudios</span>
   </button>
   <button class="nav-btn" onclick="cambiarPestana('reporte', this)">
     <span>📄</span>
-    <span>Reporte</span>
+    <span>Reporte PDF</span>
   </button>
 </nav>
 
@@ -463,6 +532,7 @@ function cambiarPestana(idPestana, elementoBoton) {
 
   if (idPestana === 'historial') cargarHistorialUI();
   if (idPestana === 'medicacion') cargarMedicacionUI();
+  if (idPestana === 'estudios') cargarEstudiosUI();
 }
 
 /* --- CLASIFICACIÓN CLÍNICA DE T.A. --- */
@@ -517,7 +587,6 @@ function guardarMedicion() {
   list.unshift(registro);
   localStorage.setItem('cc_mediciones', JSON.stringify(list));
 
-  // Mostrar Feedback
   const box = document.getElementById('boxClasificacion');
   const txt = document.getElementById('txtClasificacion');
   const desc = document.getElementById('descClasificacion');
@@ -528,7 +597,6 @@ function guardarMedicion() {
   desc.innerText = clasif.desc;
   box.style.display = 'block';
 
-  // Limpiar campos
   document.getElementById('inputSis').value = '';
   document.getElementById('inputDia').value = '';
   document.getElementById('inputPulso').value = '';
@@ -549,7 +617,6 @@ function cargarHistorialUI() {
     return;
   }
 
-  // Calcular KPI Promedios
   const sumSis = list.reduce((a, b) => a + b.sis, 0);
   const sumDia = list.reduce((a, b) => a + b.dia, 0);
   const pulsosValidos = list.filter(i => typeof i.pulso === 'number');
@@ -629,6 +696,84 @@ function cargarMedicacionUI() {
   `).join('');
 }
 
+/* --- ESTUDIOS CARDIOLÓGICOS --- */
+function guardarEstudio() {
+  const tipo = document.getElementById('selectTipoEstudio').value;
+  const fecha = document.getElementById('inputFechaEstudio').value;
+  const hora = document.getElementById('inputHoraEstudio').value;
+  const obs = document.getElementById('inputObsEstudio').value;
+  const fileInput = document.getElementById('inputFileEstudio');
+
+  if (!fecha) {
+    alert("Por favor indicá la fecha en que te realizaste el estudio.");
+    return;
+  }
+
+  const file = fileInput.files[0];
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      finalizarGuardadoEstudio(tipo, fecha, hora, obs, file.name, e.target.result);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    finalizarGuardadoEstudio(tipo, fecha, hora, obs, null, null);
+  }
+}
+
+function finalizarGuardadoEstudio(tipo, fecha, hora, obs, fileName, fileData) {
+  const registro = {
+    id: Date.now(),
+    tipo,
+    fecha,
+    hora: hora || '--:--',
+    obs: obs || 'Sin observaciones adicionales',
+    fileName,
+    fileData
+  };
+
+  let list = JSON.parse(localStorage.getItem('cc_estudios') || '[]');
+  list.unshift(registro);
+  localStorage.setItem('cc_estudios', JSON.stringify(list));
+
+  document.getElementById('inputFechaEstudio').value = '';
+  document.getElementById('inputHoraEstudio').value = '';
+  document.getElementById('inputObsEstudio').value = '';
+  document.getElementById('inputFileEstudio').value = '';
+
+  cargarEstudiosUI();
+}
+
+function cargarEstudiosUI() {
+  const cont = document.getElementById('listaEstudios');
+  const list = JSON.parse(localStorage.getItem('cc_estudios') || '[]');
+
+  if (list.length === 0) {
+    cont.innerHTML = `<p style="font-size:0.83rem; color: var(--text-muted); text-align:center;">No hay estudios adjuntos.</p>`;
+    return;
+  }
+
+  cont.innerHTML = list.map(e => `
+    <div class="item-registro">
+      <div class="item-header">
+        <strong style="color:var(--turquesa-estudios); font-size:0.95rem;">🫀 ${e.tipo}</strong>
+        <button onclick="borrarElemento('cc_estudios', ${e.id}, cargarEstudiosUI)" class="btn-borrar">🗑️</button>
+      </div>
+      <div>📅 <strong>Fecha:</strong> ${e.fecha} | ⏰ ${e.hora} hs</div>
+      <div style="color:var(--text-secondary); margin-top:2px;">📝 ${e.obs}</div>
+      ${e.fileName ? `
+        <div class="adjunto-preview">
+          📎 <strong>Archivo:</strong> 
+          <a href="${e.fileData}" download="${e.fileName}" style="color:var(--turquesa-estudios); text-decoration:underline;">
+            ${e.fileName} (Descargar / Ver)
+          </a>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
 function borrarElemento(key, id, callback) {
   let list = JSON.parse(localStorage.getItem(key) || '[]');
   list = list.filter(i => i.id !== id);
@@ -648,6 +793,7 @@ function exportarPdfCardio() {
 
   const mediciones = JSON.parse(localStorage.getItem('cc_mediciones') || '[]');
   const medicamentos = JSON.parse(localStorage.getItem('cc_medicamentos') || '[]');
+  const estudios = JSON.parse(localStorage.getItem('cc_estudios') || '[]');
 
   // Encabezado
   doc.setFont("helvetica", "bold");
@@ -656,7 +802,7 @@ function exportarPdfCardio() {
   y += 6;
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("CardioControl Pro - Monitoreo Ambulatorio de Presión Arterial", 14, y);
+  doc.text("Cardio Control - Monitoreo Ambulatorio de Presión Arterial", 14, y);
   y += 6;
 
   // Datos
@@ -705,10 +851,30 @@ function exportarPdfCardio() {
   }
   y += 4;
 
+  // Estudios Cardiológicos
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("3. Estudios Cardiológicos Complementarios:", 14, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+
+  if (estudios.length === 0) {
+    doc.text("   • Sin estudios complementarios adjuntos.", 14, y);
+    y += 6;
+  } else {
+    estudios.forEach(e => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.text(`   • [${e.fecha}] ${e.tipo}: ${e.obs} ${e.fileName ? `(Archivo: ${e.fileName})` : ''}`, 14, y);
+      y += 5;
+    });
+  }
+  y += 4;
+
   // Detalle Registros
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("3. Registro Ambulatorio de Mediciones:", 14, y);
+  doc.text("4. Registro Ambulatorio de Mediciones:", 14, y);
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
